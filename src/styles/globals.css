@@ -1,0 +1,121 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+    --primary: #3b82f6;
+    --secondary: #8b5cf6;
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --dark: #1f2937;
+    --light: #f3f4f6;
+}
+
+* {
+    @apply transition-colors duration-200;
+}
+
+body {
+    @apply bg-slate-50 font-sans text-slate-800;
+}
+
+/* App background (subtle gradient + noise-like dots) */
+#root {
+    min-height: 100vh;
+    background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(59, 130, 246, 0.14), transparent 55%),
+        radial-gradient(900px 500px at 90% 0%, rgba(139, 92, 246, 0.12), transparent 55%),
+        radial-gradient(900px 500px at 80% 90%, rgba(16, 185, 129, 0.10), transparent 55%),
+        linear-gradient(to bottom, rgba(248, 250, 252, 1), rgba(241, 245, 249, 1));
+}
+
+/* Better default focus */
+:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+    border-radius: 14px;
+}
+
+/* Subtle entry animation for cards */
+@keyframes liftIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.lift-in {
+    animation: liftIn 220ms ease-out;
+}
+
+/* Better default text rendering */
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded hover:bg-gray-400;
+}
+
+/* animations */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-slideInLeft {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+.animate-slideInRight {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+}
