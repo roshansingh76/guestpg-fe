@@ -1,71 +1,78 @@
-import { useState } from 'react'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
 import Card from '../../components/common/Card'
-import { allocations } from '../../data/mockData'
+import { listGuests } from '../../services/guestService'
+import { listBedsByPG } from '../../services/pgService'
 
 export default function AllocationsList() {
-    const [list, setList] = useState(allocations)
+    const pgId = useSelector((s) => s.auth.user?.pgId)
+    const [guests, setGuests] = useState([])
+    const [beds, setBeds] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    const handleDelete = (id) => {
-        setList((prev) => prev.filter((item) => item.id !== id))
-        toast.success('Allocation removed successfully')
-    }
+    useEffect(() => {
+        if (!pgId) return
+        Promise.all([listGuests(pgId), listBedsByPG(pgId)])
+            .then(([g, b]) => { setGuests(g); setBeds(b) })
+            .catch(() => toast.error('Failed to load allocations'))
+            .finally(() => setLoading(false))
+    }, [pgId])
 
-    const handleEdit = (guest) => {
-        toast.success(`Edit allocation for ${guest} opened`)
-    }
-
-    const handleAdd = () => {
-        toast.success('Assign bed action opened')
-    }
+    // Build allocation view: active guests with a bedId
+    const allocations = guests
+        .filter((g) => g.status === 'active' && g.bedId)
+        .map((g) => {
+            const bed = beds.find((b) => b.id === g.bedId)
+            return {
+                id: g.id,
+                guest: g.name,
+                bed: bed?.bedNumber || g.bedId,
+                room: bed?.room?.roomNumber || '—',
+                moveInDate: g.moveInDate?.slice(0, 10),
+                status: g.status,
+            }
+        })
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <p className="text-sm text-gray-500 uppercase tracking-wider">Bed allocation</p>
-                    <h1 className="text-3xl font-semibold text-gray-900">Allocations</h1>
-                </div>
-                <button onClick={handleAdd} className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
-                    <Plus size={18} /> Assign Bed
-                </button>
+            <div>
+                <p className="text-sm text-gray-500 uppercase tracking-wider">Bed allocation</p>
+                <h1 className="text-3xl font-semibold text-gray-900">Allocations</h1>
             </div>
 
             <Card>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-left text-sm text-gray-600">
-                        <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                            <tr>
-                                <th className="px-4 py-4">Guest</th>
-                                <th className="px-4 py-4">Room</th>
-                                <th className="px-4 py-4">Bed</th>
-                                <th className="px-4 py-4">Status</th>
-                                <th className="px-4 py-4">Allocated on</th>
-                                <th className="px-4 py-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {list.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-4 font-medium text-gray-900">{item.guest}</td>
-                                    <td className="px-4 py-4">{item.room}</td>
-                                    <td className="px-4 py-4">{item.bed}</td>
-                                    <td className="px-4 py-4"><span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">{item.status}</span></td>
-                                    <td className="px-4 py-4">{item.allocatedOn}</td>
-                                    <td className="px-4 py-4 flex flex-wrap items-center gap-2">
-                                        <button onClick={() => handleEdit(item.guest)} className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700 text-sm hover:bg-blue-100">
-                                            <Pencil size={14} /> Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(item.id)} className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-2 text-red-700 text-sm hover:bg-red-100">
-                                            <Trash2 size={14} /> Delete
-                                        </button>
-                                    </td>
+                {loading ? <p className="text-center text-gray-500 py-8">Loading...</p> : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-left text-sm text-gray-600">
+                            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                                <tr>
+                                    <th className="px-4 py-4">Guest</th>
+                                    <th className="px-4 py-4">Room</th>
+                                    <th className="px-4 py-4">Bed</th>
+                                    <th className="px-4 py-4">Status</th>
+                                    <th className="px-4 py-4">Move-in date</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {allocations.length === 0 && (
+                                    <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No active allocations</td></tr>
+                                )}
+                                {allocations.map((item) => (
+                                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-4 py-4 font-medium text-gray-900">{item.guest}</td>
+                                        <td className="px-4 py-4">{item.room}</td>
+                                        <td className="px-4 py-4">{item.bed}</td>
+                                        <td className="px-4 py-4">
+                                            <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">{item.status}</span>
+                                        </td>
+                                        <td className="px-4 py-4">{item.moveInDate}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </Card>
         </div>
     )

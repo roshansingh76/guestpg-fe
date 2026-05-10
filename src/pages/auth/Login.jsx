@@ -10,25 +10,30 @@ export default function Login() {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const { register, handleSubmit, formState: { errors } } = useForm()
-    const { isLoading, error, user } = useSelector((state) => state.auth)
+    const { isLoading, error, user, isAuthenticated } = useSelector((state) => state.auth)
 
+    // Redirect already-logged-in users away from login page
     useEffect(() => {
+        if (!isAuthenticated) return
         if (user?.role === 'super_admin') {
-            navigate('/admin/dashboard')
+            navigate('/admin/dashboard', { replace: true })
         } else if (user?.role === 'pg_owner') {
-            navigate('/owner/dashboard')
+            navigate('/owner/dashboard', { replace: true })
         }
-    }, [navigate, user])
+    }, [isAuthenticated, navigate, user])
 
     const onSubmit = async (values) => {
         const result = await dispatch(loginUser(values))
-        if (result.payload?.user) {
+        if (loginUser.fulfilled.match(result)) {
             toast.success('Login successful!')
-            if (result.payload.user.role === 'super_admin') {
-                navigate('/admin/dashboard')
+            const role = result.payload.user?.role
+            if (role === 'super_admin') {
+                navigate('/admin/dashboard', { replace: true })
             } else {
-                navigate('/owner/dashboard')
+                navigate('/owner/dashboard', { replace: true })
             }
+        } else {
+            toast.error(result.payload || 'Login failed')
         }
     }
 
@@ -96,13 +101,14 @@ export default function Login() {
                         </button>
                     </form>
 
-                    <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm font-semibold text-blue-900 mb-2">Demo Credentials:</p>
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <p className="text-xs font-semibold text-blue-900 mb-2">Demo Credentials</p>
                         <div className="text-xs text-blue-800 space-y-1">
-                            <p><strong>Super Admin:</strong> admin@pgsystem.com / password</p>
-                            <p><strong>PG Owner:</strong> owner@pgsystem.com / password</p>
+                            <p><span className="font-medium">Super Admin:</span> admin@pgsystem.com / password</p>
+                            <p><span className="font-medium">PG Owner:</span> owner@pgsystem.com / password</p>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

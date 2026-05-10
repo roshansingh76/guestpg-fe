@@ -1,47 +1,21 @@
-import { guests as seedGuests } from '../data/mockData'
-import { ensureSeed, getCollection, nextId, setCollection } from './localDb'
+import api from './api'
 
-const KEY = 'guestpg.guests'
+const unwrap = (res) => (res.data && res.data.data !== undefined) ? res.data.data : res.data
 
-export function initGuests() {
-    ensureSeed(KEY, seedGuests)
-}
+export const listGuests = (pgId) =>
+    api.get(`/pgs/${pgId}/guests`).then(unwrap)
 
-export function listGuests() {
-    initGuests()
-    return getCollection(KEY, [])
-}
+export const getGuest = (pgId, id) =>
+    api.get(`/pgs/${pgId}/guests/${id}`).then(unwrap)
 
-export function getGuest(id) {
-    const items = listGuests()
-    return items.find((g) => g.id.toString() === id.toString()) || null
-}
+export const createGuest = (pgId, data) =>
+    api.post(`/pgs/${pgId}/guests`, data).then(unwrap)
 
-export function createGuest(data) {
-    const items = listGuests()
-    const id = nextId(items)
-    const newGuest = {
-        id,
-        status: 'active',
-        joiningDate: new Date().toISOString().slice(0, 10),
-        ...data,
-    }
-    const next = [newGuest, ...items]
-    setCollection(KEY, next)
-    return newGuest
-}
+export const updateGuest = (pgId, id, data) =>
+    api.put(`/pgs/${pgId}/guests/${id}`, data).then(unwrap)
 
-export function updateGuest(id, data) {
-    const items = listGuests()
-    const next = items.map((g) => (g.id.toString() === id.toString() ? { ...g, ...data, id: g.id } : g))
-    setCollection(KEY, next)
-    return next.find((g) => g.id.toString() === id.toString()) || null
-}
+export const checkoutGuest = (pgId, id, data) =>
+    api.patch(`/pgs/${pgId}/guests/${id}/checkout`, data).then(unwrap)
 
-export function deleteGuest(id) {
-    const items = listGuests()
-    const next = items.filter((g) => g.id.toString() !== id.toString())
-    setCollection(KEY, next)
-    return true
-}
-
+export const deleteGuest = (pgId, id) =>
+    api.delete(`/pgs/${pgId}/guests/${id}`).then(unwrap)

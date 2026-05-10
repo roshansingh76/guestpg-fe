@@ -1,64 +1,77 @@
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { LineChart, Line, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts'
 import Card from '../../components/common/Card'
 import StatsCard from '../../components/common/StatsCard'
-import { ownerDashboard, recentPayments, recentGuests } from '../../data/mockData'
 import { Users, Home, DollarSign, BarChart3 } from 'lucide-react'
+import { listGuests } from '../../services/guestService'
+import { listRooms, listBedsByPG } from '../../services/pgService'
+import { listBills } from '../../services/billingService'
+import { getExpenseSummary } from '../../services/expenseService'
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b']
 
 export default function Dashboard() {
+    const pgId = useSelector((s) => s.auth.user?.pgId)
+    const [stats, setStats] = useState({ guests: 0, rooms: 0, revenue: 0, pending: 0 })
+    const [beds, setBeds] = useState([])
+    const [recentGuests, setRecentGuests] = useState([])
+    const [recentBills, setRecentBills] = useState([])
+    const [expSummary, setExpSummary] = useState([])
+
+    useEffect(() => {
+        if (!pgId) return
+        Promise.all([
+            listGuests(pgId),
+            listRooms(pgId),
+            listBedsByPG(pgId),
+            listBills(pgId),
+            getExpenseSummary(pgId).catch(() => []),
+        ]).then(([guests, rooms, bedsData, bills, expData]) => {
+            const activeGuests = guests.filter((g) => g.status === 'active')
+            const paidRevenue = bills.filter((b) => b.status === 'paid').reduce((s, b) => s + b.paidAmount, 0)
+            const pendingDue = bills.filter((b) => b.status !== 'paid').reduce((s, b) => s + b.dueAmount, 0)
+            setStats({ guests: activeGuests.length, rooms: rooms.length, revenue: paidRevenue, pending: pendingDue })
+            setBeds(bedsData)
+            setRecentGuests(guests.slice(0, 5))
+            setRecentBills(bills.slice(0, 5))
+            if (Array.isArray(expData)) setExpSummary(expData)
+        })
+    }, [pgId])
+
+    const occupied = beds.filter((b) => b.status === 'occupied').length
+    const vacant = beds.filter((b) => b.status === 'vacant').length
+    const occupancyData = [
+        { name: 'Occupied', value: occupied },
+        { name: 'Vacant', value: vacant },
+    ]
+
+    const statsCards = [
+        { label: 'Active guests', value: stats.guests, icon: Users, color: 'blue' },
+        { label: 'Total rooms', value: stats.rooms, icon: Home, color: 'purple' },
+        { label: 'Revenue collected', value: `₹ ${stats.revenue.toLocaleString()}`, icon: DollarSign, color: 'green' },
+        { label: 'Pending dues', value: `₹ ${stats.pending.toLocaleString()}`, icon: BarChart3, color: 'orange' },
+    ]
+
     return (
         <div className="space-y-8">
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                {ownerDashboard.stats.map((item) => (
-                    <StatsCard
-                        key={item.id}
-                        icon={item.icon === 'Users' ? Users : item.icon === 'DollarSign' ? DollarSign : item.icon === 'BarChart3' ? BarChart3 : Home}
-                        label={item.label}
-                        value={item.value}
-                        change={{ value: item.change, positive: item.change >= 0 }}
-                        color={item.color}
-                    />
+                {statsCards.map((item) => (
+                    <StatsCard key={item.label} icon={item.icon} label={item.label} value={item.value} color={item.color} />
                 ))}
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wider">Revenue</p>
-                            <h2 className="text-2xl font-semibold text-gray-900">Monthly income</h2>
-                        </div>
-                        <span className="text-xs bg-green-100 text-green-700 rounded-full px-3 py-1">Updated</span>
-                    </div>
-                    <div className="h-72">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={ownerDashboard.revenue} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                                <YAxis tickLine={false} axisLine={false} />
-                                <Tooltip formatter={(value) => `₹ ${value}`} />
-                                <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Card>
-
-                <Card>
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wider">Occupancy</p>
-                            <h2 className="text-2xl font-semibold text-gray-900">Bed utilization</h2>
-                        </div>
-                        <span className="text-xs bg-blue-100 text-blue-700 rounded-full px-3 py-1">Live</span>
+                    <div className="mb-6">
+                        <p className="text-sm text-gray-500 uppercase tracking-wider">Occupancy</p>
+                        <h2 className="text-2xl font-semibold text-gray-900">Bed utilization</h2>
                     </div>
                     <div className="h-72">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie data={ownerDashboard.occupancy} innerRadius={60} outerRadius={100} fill="#3b82f6" dataKey="value" nameKey="name">
-                                    {ownerDashboard.occupancy.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
+                                <Pie data={occupancyData} innerRadius={60} outerRadius={100} dataKey="value" nameKey="name" paddingAngle={4}>
+                                    {occupancyData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
                                 <Legend verticalAlign="bottom" height={36} />
                                 <Tooltip />
@@ -66,47 +79,60 @@ export default function Dashboard() {
                         </ResponsiveContainer>
                     </div>
                 </Card>
+
+                <Card>
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-500 uppercase tracking-wider">Recent bills</p>
+                        <h2 className="text-xl font-semibold text-gray-900">Latest transactions</h2>
+                    </div>
+                    <div className="space-y-3">
+                        {recentBills.length === 0 && <p className="text-gray-400 text-sm">No bills yet</p>}
+                        {recentBills.map((bill) => (
+                            <div key={bill.id} className="rounded-3xl border border-gray-100 p-4 flex items-center justify-between gap-4 hover:shadow-sm transition">
+                                <div>
+                                    <p className="font-semibold text-gray-900">{bill.guest?.name}</p>
+                                    <p className="text-sm text-gray-500">{bill.billMonth}/{bill.billYear}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className={`font-semibold capitalize ${bill.status === 'paid' ? 'text-green-600' : 'text-orange-600'}`}>{bill.status}</p>
+                                    <p className="text-gray-900">₹ {bill.totalAmount}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wider">Recent payments</p>
-                            <h2 className="text-xl font-semibold text-gray-900">Latest transactions</h2>
-                        </div>
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-500 uppercase tracking-wider">Recent guests</p>
+                        <h2 className="text-xl font-semibold text-gray-900">New check-ins</h2>
                     </div>
                     <div className="space-y-3">
-                        {recentPayments.map((payment) => (
-                            <div key={payment.id} className="rounded-3xl border border-gray-100 p-4 flex items-center justify-between gap-4 hover:shadow-sm transition">
+                        {recentGuests.length === 0 && <p className="text-gray-400 text-sm">No guests yet</p>}
+                        {recentGuests.map((guest) => (
+                            <div key={guest.id} className="rounded-3xl border border-gray-100 p-4 flex items-center justify-between hover:shadow-sm transition">
                                 <div>
-                                    <p className="font-semibold text-gray-900">{payment.guest}</p>
-                                    <p className="text-sm text-gray-500">{payment.method} • {payment.date}</p>
+                                    <p className="font-semibold text-gray-900">{guest.name}</p>
+                                    <p className="text-sm text-gray-500">{guest.phone}</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className={`font-semibold ${payment.status === 'Paid' ? 'text-green-600' : 'text-orange-600'}`}>{payment.status}</p>
-                                    <p className="text-gray-900">₹ {payment.amount}</p>
-                                </div>
+                                <span className="text-sm text-gray-500">{guest.moveInDate?.slice(0, 10)}</span>
                             </div>
                         ))}
                     </div>
                 </Card>
 
                 <Card>
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wider">Recent guests</p>
-                            <h2 className="text-xl font-semibold text-gray-900">New check-ins</h2>
-                        </div>
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-500 uppercase tracking-wider">Bed status</p>
+                        <h2 className="text-xl font-semibold text-gray-900">Overview</h2>
                     </div>
-                    <div className="space-y-3">
-                        {recentGuests.map((guest) => (
-                            <div key={guest.id} className="rounded-3xl border border-gray-100 p-4 flex items-center justify-between hover:shadow-sm transition">
-                                <div>
-                                    <p className="font-semibold text-gray-900">{guest.name}</p>
-                                    <p className="text-sm text-gray-500">Room {guest.room}</p>
-                                </div>
-                                <span className="text-sm text-gray-500">{guest.joined}</span>
+                    <div className="grid grid-cols-3 gap-4">
+                        {['vacant', 'occupied', 'reserved'].map((s) => (
+                            <div key={s} className="rounded-2xl border border-gray-100 p-4 text-center bg-slate-50">
+                                <p className="text-2xl font-bold text-gray-900">{beds.filter((b) => b.status === s).length}</p>
+                                <p className="text-xs text-gray-500 capitalize mt-1">{s}</p>
                             </div>
                         ))}
                     </div>

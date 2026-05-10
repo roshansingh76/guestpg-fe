@@ -14,6 +14,8 @@ import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/admin/Dashboard'
 import PGOwnersList from './pages/admin/PGOwnersList'
 import PGOwnerEdit from './pages/admin/PGOwnerEdit'
+import PGEdit from './pages/admin/PGEdit'
+import PGOwnerCreate from './pages/admin/PGOwnerCreate'
 import AllPGs from './pages/admin/AllPGs'
 import Reports from './pages/admin/Reports'
 
@@ -53,7 +55,10 @@ function App() {
                                     <Routes>
                                         <Route path="dashboard" element={<Dashboard />} />
                                         <Route path="pg-owners" element={<PGOwnersList />} />
+                                        <Route path="pg-owners/new" element={<PGOwnerCreate />} />
                                         <Route path="pg-owners/:id/edit" element={<PGOwnerEdit />} />
+                                        <Route path="pgs/new" element={<PGEdit />} />
+                                        <Route path="pgs/:id/edit" element={<PGEdit />} />
                                         <Route path="pgs" element={<AllPGs />} />
                                         <Route path="reports" element={<Reports />} />
                                         <Route path="*" element={<Navigate to="/admin/dashboard" />} />
