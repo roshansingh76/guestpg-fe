@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
 import { createBed, listRooms } from '../../services/pgService'
 
 export default function BedCreate() {
@@ -41,7 +42,7 @@ export default function BedCreate() {
                     <p className="text-sm text-gray-500 uppercase tracking-wider">Add bed</p>
                     <h1 className="text-3xl font-semibold text-gray-900">New bed</h1>
                 </div>
-                <Link to="/owner/beds" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Link>
+                <Button to="/owner/beds" variant="ghost" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Button>
             </div>
 
             <Card>
@@ -68,10 +69,12 @@ export default function BedCreate() {
                         </select>
                     </div>
                     <div className="md:col-span-2 flex items-center gap-3">
-                        <button type="submit" disabled={saving} className="rounded-2xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50">
+                        <Button type="submit" disabled={saving} variant="primary" className="px-6 py-3">
                             {saving ? 'Saving...' : 'Create bed'}
-                        </button>
-                        <Link to="/owner/beds" className="rounded-2xl border border-gray-200 bg-white px-6 py-3 text-gray-700 font-semibold hover:bg-gray-50">Cancel</Link>
+                        </Button>
+                        <Button to="/owner/beds" variant="secondary" className="px-6 py-3">
+                            Cancel
+                        </Button>
                     </div>
                 </form>
             </Card>

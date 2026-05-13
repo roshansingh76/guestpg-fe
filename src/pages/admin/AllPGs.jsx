@@ -3,6 +3,7 @@ import { Pencil, Trash2, Plus, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { listPGs, deletePG, changePGStatus } from '../../services/pgService'
 
@@ -61,9 +62,9 @@ export default function AllPGs() {
                         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search PGs"
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
-                    <button onClick={() => navigate('/admin/pgs/new')} className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
-                        <Plus size={18} /> Add PG
-                    </button>
+                    <Button onClick={() => navigate('/admin/pgs/new')} icon={Plus} variant="primary" size="md">
+                        Add PG
+                    </Button>
                 </div>
             </div>
 
@@ -100,14 +101,12 @@ export default function AllPGs() {
                                             </button>
                                         </td>
                                         <td className="px-4 py-4 flex flex-wrap items-center gap-2">
-                                            <button onClick={() => navigate(`/admin/pgs/${pg.id}/edit`)}
-                                                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700 text-sm hover:bg-blue-100">
-                                                <Pencil size={14} /> Edit
-                                            </button>
-                                            <button onClick={() => setConfirm({ open: true, id: pg.id, name: pg.pgName })}
-                                                className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-2 text-red-700 text-sm hover:bg-red-100">
-                                                <Trash2 size={14} /> Delete
-                                            </button>
+                                            <Button onClick={() => navigate(`/admin/pgs/${pg.id}/edit`)} icon={Pencil} variant="outline" size="sm">
+                                                Edit
+                                            </Button>
+                                            <Button onClick={() => setConfirm({ open: true, id: pg.id, name: pg.pgName })} icon={Trash2} variant="danger" size="sm">
+                                                Delete
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}

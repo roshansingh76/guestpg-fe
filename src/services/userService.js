@@ -1,7 +1,15 @@
 import api, { unwrapResponse } from './api'
 
-export const listUsers = (params) =>
-    api.get('/users', { params }).then(unwrapResponse)
+export const listUsers = async (params) => {
+    try {
+        const response = await api.get('/users', { params })
+        const data = response?.data?.data || response?.data?.items || response?.data || []
+        return Array.isArray(data) ? data : data.users ? data.users : []
+    } catch (error) {
+        console.error('Error fetching users:', error?.response?.data || error.message)
+        throw error
+    }
+}
 
 export const getUser = (id) =>
     api.get(`/users/${id}`).then(unwrapResponse)

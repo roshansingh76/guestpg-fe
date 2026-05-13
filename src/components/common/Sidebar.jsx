@@ -14,6 +14,8 @@ export default function Sidebar({ open, onClose }) {
         { icon: Settings, label: 'PGs', path: '/admin/pgs' },
         { icon: Users, label: 'Tenants', path: '/owner/tenants' },
         { icon: Settings, label: 'Rooms', path: '/owner/rooms' },
+        { icon: DollarSign, label: 'Bills', path: '/owner/bills' },
+        { icon: Zap, label: 'Expenses', path: '/owner/expenses' },
         { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
     ]
 
@@ -24,6 +26,7 @@ export default function Sidebar({ open, onClose }) {
         { icon: Settings, label: 'Beds', path: '/owner/beds' },
         { icon: Settings, label: 'Allocations', path: '/owner/allocations' },
         { icon: DollarSign, label: 'Payments', path: '/owner/payments' },
+        { icon: DollarSign, label: 'Bills', path: '/owner/bills' },
         { icon: Zap, label: 'Expenses', path: '/owner/expenses' },
         { icon: BarChart3, label: 'Reports', path: '/owner/reports' },
     ]

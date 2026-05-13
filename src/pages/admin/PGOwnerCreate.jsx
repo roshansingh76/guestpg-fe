@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
 import { ArrowLeft } from 'lucide-react'
 import { createUser, getAvailablePGs } from '../../services/userService'
 
@@ -11,7 +12,7 @@ export default function PGOwnerCreate() {
     const [pgs, setPgs] = useState([])
     const [saving, setSaving] = useState(false)
     const { register, handleSubmit, formState: { errors } } = useForm({
-        defaultValues: { name: '', email: '', phone: '', password: 'password', pgId: '' },
+        defaultValues: { name: '', email: '', phone: '', password: 'password', pgIds: [] },
     })
 
     useEffect(() => {
@@ -21,7 +22,18 @@ export default function PGOwnerCreate() {
     const onSubmit = async (values) => {
         setSaving(true)
         try {
-            await createUser({ name: values.name, email: values.email, phone: values.phone, password: values.password, role: 'pg_owner', pgId: Number(values.pgId) })
+            await createUser({
+                name: values.name,
+                email: values.email,
+                phone: values.phone,
+                password: values.password,
+                role: 'pg_owner',
+                pgIds: Array.isArray(values.pgIds)
+                    ? values.pgIds.map(Number)
+                    : values.pgIds
+                    ? [Number(values.pgIds)]
+                    : [],
+            })
             toast.success('Owner created')
             navigate('/admin/pg-owners')
         } catch (err) {
@@ -38,7 +50,9 @@ export default function PGOwnerCreate() {
                     <p className="text-sm text-gray-500 uppercase tracking-wider">Add owner</p>
                     <h1 className="text-3xl font-semibold text-gray-900">New PG Owner</h1>
                 </div>
-                <Link to="/admin/pg-owners" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Link>
+                <Button to="/admin/pg-owners" variant="ghost" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                    <ArrowLeft size={18} /> Back
+                </Button>
             </div>
 
             <Card>
@@ -64,12 +78,22 @@ export default function PGOwnerCreate() {
                         {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Assign PG</label>
-                        <select {...register('pgId', { required: 'Select a PG' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white">
-                            <option value="">Select a PG</option>
-                            {pgs.map((p) => <option key={p.id} value={p.id}>{p.pgName} — {p.city}</option>)}
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Assign PGs</label>
+                        <select
+                            {...register('pgIds', {
+                                validate: (value) => (Array.isArray(value) ? value.length > 0 : !!value) || 'Select at least one PG',
+                            })}
+                            multiple
+                            className="h-40 w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white"
+                        >
+                            {pgs.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.pgName} — {p.city}
+                                </option>
+                            ))}
                         </select>
+                        {errors.pgIds && <p className="mt-1 text-sm text-red-600">{errors.pgIds.message}</p>}
                     </div>
 
                     <div className="md:col-span-2">

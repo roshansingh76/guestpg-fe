@@ -33,6 +33,9 @@ import BedEdit from './pages/owner/BedEdit'
 import AllocationsList from './pages/owner/AllocationsList'
 import PaymentsList from './pages/owner/PaymentsList'
 import ExpensesList from './pages/owner/ExpensesList'
+import BillsList from './pages/owner/BillsList'
+import BillsCreate from './pages/owner/BillsCreate'
+import BillDetails from './pages/owner/BillDetails'
 import OwnerReports from './pages/owner/Reports'
 
 function App() {
@@ -90,6 +93,9 @@ function App() {
                                         <Route path="beds/:id/edit" element={<BedEdit />} />
                                         <Route path="allocations" element={<AllocationsList />} />
                                         <Route path="payments" element={<PaymentsList />} />
+                                        <Route path="bills" element={<BillsList />} />
+                                        <Route path="bills/new" element={<BillsCreate />} />
+                                        <Route path="bills/:id" element={<BillDetails />} />
                                         <Route path="expenses" element={<ExpensesList />} />
                                         <Route path="reports" element={<OwnerReports />} />
                                         <Route path="*" element={<Navigate to="/owner/dashboard" />} />

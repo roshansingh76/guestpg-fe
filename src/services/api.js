@@ -13,6 +13,13 @@ export const unwrapResponse = (res) => {
 export const getErrorMessage = (error) =>
     error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || 'Something went wrong'
 
+export const getAssetUrl = (relativeUrl) => {
+    if (!relativeUrl) return null
+    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) return relativeUrl
+    const baseUrl = import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+    return `${baseUrl}${relativeUrl}`
+}
+
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
     if (token) config.headers.Authorization = `Bearer ${token}`

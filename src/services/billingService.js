@@ -1,10 +1,19 @@
 import api, { unwrapResponse } from './api'
 
+export const listAllBills = (params = {}) =>
+    api.get('/bills', { params }).then(unwrapResponse)
+
 export const listBills = (pgId) =>
     api.get(`/pgs/${pgId}/bills`).then(unwrapResponse)
 
-export const getBill = (pgId, billId) =>
-    api.get(`/pgs/${pgId}/bills/${billId}`).then(unwrapResponse)
+export const getBill = (billId) =>
+    api.get(`/bills/${billId}`).then((res) => res.data.data)
+
+export const addBillItem = (billId, data) =>
+    api.post(`/bills/${billId}/items`, data).then(unwrapResponse)
+
+export const updateBillItem = (billId, itemId, data) =>
+    api.put(`/bills/${billId}/items/${itemId}`, data).then(unwrapResponse)
 
 export const getOverdueBills = (pgId) =>
     api.get(`/pgs/${pgId}/bills/overdue`).then(unwrapResponse)

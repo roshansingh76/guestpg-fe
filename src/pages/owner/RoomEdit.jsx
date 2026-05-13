@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
 import Card from '../../components/common/Card'
-import { getRoom, updateRoom } from '../../services/pgService'
+import Button from '../../components/common/Button'
+import { getRoom, listPGs, updateRoom } from '../../services/pgService'
 
 export default function RoomEdit() {
     const { id } = useParams()
@@ -14,6 +15,7 @@ export default function RoomEdit() {
     const pgId = user?.pgId || localStorage.getItem('selectedPgId')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [pgName, setPgName] = useState('')
     const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
     useEffect(() => {
@@ -23,6 +25,16 @@ export default function RoomEdit() {
             .catch(() => toast.error('Failed to load room'))
             .finally(() => setLoading(false))
     }, [pgId, id, reset])
+
+    useEffect(() => {
+        if (!pgId) return
+        listPGs()
+            .then((pgList) => {
+                const pg = pgList.find((item) => String(item.id) === String(pgId))
+                setPgName(pg?.pgName || '')
+            })
+            .catch(() => {})
+    }, [pgId])
 
     const onSubmit = async (values) => {
         setSaving(true)
@@ -46,11 +58,15 @@ export default function RoomEdit() {
                     <p className="text-sm text-gray-500 uppercase tracking-wider">Edit room</p>
                     <h1 className="text-3xl font-semibold text-gray-900">Room details</h1>
                 </div>
-                <Link to="/owner/rooms" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Link>
+                <Button to="/owner/rooms" variant="ghost" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Button>
             </div>
 
             <Card>
                 <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 md:grid-cols-2">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">PG Name</label>
+                        <input value={pgName} disabled className="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-gray-700 focus:outline-none" />
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Room number</label>
                         <input {...register('roomNumber', { required: 'Required' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />

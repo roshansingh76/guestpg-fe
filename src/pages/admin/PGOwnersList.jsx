@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, User, Mail, Phone, CheckCircle, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { listUsers, deleteUser, changeUserStatus } from '../../services/userService'
 
@@ -15,8 +16,14 @@ export default function PGOwnersList() {
 
     useEffect(() => {
         listUsers({ role: 'pg_owner' })
-            .then((data) => setOwners(Array.isArray(data) ? data : data.users || []))
-            .catch(() => toast.error('Failed to load owners'))
+            .then((data) => {
+                console.log('Owners data:', data)
+                setOwners(Array.isArray(data) ? data : [])
+            })
+            .catch((error) => {
+                console.error('Failed to load owners:', error)
+                toast.error('Failed to load owners')
+            })
             .finally(() => setLoading(false))
     }, [])
 
@@ -55,55 +62,113 @@ export default function PGOwnersList() {
                     <p className="text-sm text-gray-500 uppercase tracking-wider">PG Owner Management</p>
                     <h1 className="text-3xl font-semibold text-gray-900">PG Owners</h1>
                 </div>
-                <div className="flex flex-col gap-3 sm:flex-row items-stretch sm:items-center">
-                    <div className="relative text-gray-500">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={18} />
-                        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search owners"
-                            className="pl-10 pr-4 py-3 border border-gray-200 rounded-2xl w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <button onClick={() => navigate('/admin/pg-owners/new')} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
-                        <Plus size={18} /> Add Owner
-                    </button>
-                </div>
+                <Button onClick={() => navigate('/admin/pg-owners/new')} icon={Plus} variant="primary" size="md">
+                    Add Owner
+                </Button>
             </div>
 
             <Card>
-                {loading ? <p className="text-center text-gray-500 py-8">Loading...</p> : (
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-sm text-gray-500 uppercase tracking-wider">Owner listings</p>
+                        <h2 className="text-lg font-semibold text-gray-900">All owners</h2>
+                    </div>
+                    <div className="relative text-gray-500 w-full md:w-80">
+                        <Search className="absolute left-3 top-3.5" size={18} />
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search owners"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                </div>
+
+                {loading ? (
+                    <p className="text-center text-gray-500 py-8">Loading owners...</p>
+                ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-left text-sm text-gray-600">
-                            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                            <thead className="bg-blue-50 text-xs font-semibold uppercase tracking-wider text-blue-700 border-b border-blue-100">
                                 <tr>
-                                    <th className="px-4 py-4">Owner</th>
-                                    <th className="px-4 py-4">Email</th>
-                                    <th className="px-4 py-4">Phone</th>
-                                    <th className="px-4 py-4">Status</th>
-                                    <th className="px-4 py-4">Actions</th>
+                                    <th className="px-6 py-4 text-left">
+                                        <div className="flex items-center gap-2">
+                                            <User className="w-4 h-4" />
+                                            Owner Name
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-4 text-left">
+                                        <div className="flex items-center gap-2">
+                                            <Mail className="w-4 h-4" />
+                                            Email
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-4 text-left">
+                                        <div className="flex items-center gap-2">
+                                            <Phone className="w-4 h-4" />
+                                            Phone
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-4 text-left">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle className="w-4 h-4" />
+                                            Status
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-4 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Settings className="w-4 h-4" />
+                                            Actions
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {filtered.length === 0 && (
-                                    <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No owners found</td></tr>
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                                            <div className="space-y-1">
+                                                <p>No owners found.</p>
+                                                <p className="text-xs text-gray-500">Add an owner to get started.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 )}
-                                {filtered.map((owner) => (
-                                    <tr key={owner.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-4 font-medium text-gray-900">{owner.name}</td>
-                                        <td className="px-4 py-4">{owner.email}</td>
-                                        <td className="px-4 py-4">{owner.phone}</td>
-                                        <td className="px-4 py-4">
-                                            <button onClick={() => toggleStatus(owner)}
-                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold cursor-pointer ${owner.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                {owner.status}
+                                {filtered.map((owner, index) => (
+                                    <tr key={owner.id} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                        <td className="px-6 py-4 font-medium text-gray-900">{owner.name}</td>
+                                        <td className="px-6 py-4 text-gray-600">{owner.email}</td>
+                                        <td className="px-6 py-4 text-gray-600">{owner.phone}</td>
+                                        <td className="px-6 py-4">
+                                            <button
+                                                onClick={() => toggleStatus(owner)}
+                                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                                                    owner.status === 'active'
+                                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                                }`}
+                                            >
+                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                {owner.status === 'active' ? 'Active' : 'Inactive'}
                                             </button>
                                         </td>
-                                        <td className="px-4 py-4 space-x-2">
-                                            <button onClick={() => navigate(`/admin/pg-owners/${owner.id}/edit`)}
-                                                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700 text-sm hover:bg-blue-100">
-                                                <Pencil size={14} /> Edit
-                                            </button>
-                                            <button onClick={() => setConfirm({ open: true, id: owner.id, name: owner.name })}
-                                                className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-2 text-red-700 text-sm hover:bg-red-100">
-                                                <Trash2 size={14} /> Delete
-                                            </button>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => navigate(`/admin/pg-owners/${owner.id}/edit`)}
+                                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                                    title="Edit Owner"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirm({ open: true, id: owner.id, name: owner.name })}
+                                                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                                    title="Delete Owner"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -113,8 +178,14 @@ export default function PGOwnersList() {
                 )}
             </Card>
 
-            <ConfirmDialog open={confirm.open} title="Delete owner?" description={`Remove ${confirm.name}? This cannot be undone.`}
-                confirmText="Delete" onCancel={() => setConfirm({ open: false, id: null, name: '' })} onConfirm={handleDelete} />
+            <ConfirmDialog
+                open={confirm.open}
+                title="Delete owner?"
+                description={`Remove ${confirm.name}? This cannot be undone.`}
+                confirmText="Delete"
+                onCancel={() => setConfirm({ open: false, id: null, name: '' })}
+                onConfirm={handleDelete}
+            />
         </div>
     )
 }

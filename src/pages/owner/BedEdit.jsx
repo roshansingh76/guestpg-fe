@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
 import { listRooms, updateBed, listBedsByPG } from '../../services/pgService'
 
 export default function BedEdit() {
@@ -43,7 +44,7 @@ export default function BedEdit() {
     }
 
     if (loading) return <p className="p-8 text-gray-500">Loading...</p>
-    if (!bed) return <div className="p-8"><p className="text-gray-600">Bed not found.</p><Link to="/owner/beds" className="text-blue-600 hover:underline">Back</Link></div>
+    if (!bed) return <div className="p-8"><p className="text-gray-600">Bed not found.</p><Button to="/owner/beds" variant="ghost" className="text-blue-600 hover:underline">Back</Button></div>
 
     return (
         <div className="space-y-6">
@@ -52,7 +53,7 @@ export default function BedEdit() {
                     <p className="text-sm text-gray-500 uppercase tracking-wider">Edit bed</p>
                     <h1 className="text-3xl font-semibold text-gray-900">{bed.bedNumber}</h1>
                 </div>
-                <Link to="/owner/beds" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Link>
+                <Button to="/owner/beds" variant="ghost" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"><ArrowLeft size={18} /> Back</Button>
             </div>
 
             <Card>

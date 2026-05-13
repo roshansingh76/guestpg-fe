@@ -1,23 +1,48 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import Card from '../../components/common/Card'
+import Button from '../../components/common/Button'
 import { createGuest } from '../../services/guestService'
-import { listPGs } from '../../services/pgService'
+import { listPGs, listRooms } from '../../services/pgService'
+import { getAssetUrl } from '../../services/api'
 
 export default function GuestCreate() {
     const navigate = useNavigate()
     const user = useSelector((s) => s.auth.user)
     const isOwner = user?.role === 'pg_owner' || user?.role === 'pg_staff'
     const [pgs, setPgs] = useState([])
+    const [rooms, setRooms] = useState([])
     const [selectedPgId, setSelectedPgId] = useState(user?.pgId ? String(user.pgId) : '')
     const [saving, setSaving] = useState(false)
-    const { register, handleSubmit, formState: { errors } } = useForm({
-        defaultValues: { name: '', phone: '', aadhar: '', emergency: '', emergencyPhone: '', address: '' },
+    const [photoPreview, setPhotoPreview] = useState('')
+    const [idProofPreview, setIdProofPreview] = useState('')
+    const [viewingImage, setViewingImage] = useState(null)
+    const { register, handleSubmit, formState: { errors }, watch } = useForm({
+        defaultValues: { name: '', phone: '', aadhar: '', roomId: '', moveInDate: '', moveOutDate: '', emergency: '', emergencyPhone: '', address: '' },
     })
+
+    const photoFiles = watch('photo')
+    const idProofFiles = watch('idProof')
+
+    useEffect(() => {
+        if (photoFiles?.[0]) {
+            const reader = new FileReader()
+            reader.onloadend = () => setPhotoPreview(reader.result)
+            reader.readAsDataURL(photoFiles[0])
+        }
+    }, [photoFiles])
+
+    useEffect(() => {
+        if (idProofFiles?.[0]) {
+            const reader = new FileReader()
+            reader.onloadend = () => setIdProofPreview(reader.result)
+            reader.readAsDataURL(idProofFiles[0])
+        }
+    }, [idProofFiles])
 
     useEffect(() => {
         const loadPGs = async () => {
@@ -35,6 +60,17 @@ export default function GuestCreate() {
         loadPGs()
     }, [])
 
+    useEffect(() => {
+        if (!selectedPgId) {
+            setRooms([])
+            return
+        }
+
+        listRooms(selectedPgId)
+            .then(setRooms)
+            .catch(() => setRooms([]))
+    }, [selectedPgId])
+
     const onSubmit = async (values) => {
         if (!selectedPgId) {
             toast.error('Please select a PG')
@@ -42,7 +78,20 @@ export default function GuestCreate() {
         }
         setSaving(true)
         try {
-            await createGuest(selectedPgId, values)
+            const formData = new FormData()
+            formData.append('name', values.name)
+            formData.append('phone', values.phone)
+            formData.append('aadhar', values.aadhar)
+            if (values.roomId) formData.append('roomId', values.roomId)
+            if (values.moveInDate) formData.append('moveInDate', values.moveInDate)
+            if (values.moveOutDate) formData.append('moveOutDate', values.moveOutDate)
+            if (values.emergency) formData.append('emergency', values.emergency)
+            if (values.emergencyPhone) formData.append('emergencyPhone', values.emergencyPhone)
+            if (values.address) formData.append('address', values.address)
+            if (values.photo?.[0]) formData.append('photo', values.photo[0])
+            if (values.idProof?.[0]) formData.append('idProof', values.idProof[0])
+
+            await createGuest(selectedPgId, formData)
             toast.success('Tenant created successfully')
             navigate('/owner/tenants')
         } catch (err) {
@@ -59,9 +108,9 @@ export default function GuestCreate() {
                     <p className="text-sm text-gray-500 uppercase tracking-wider">Add tenant</p>
                     <h1 className="text-3xl font-semibold text-gray-900">New tenant</h1>
                 </div>
-                <Link to="/owner/tenants" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                <Button to="/owner/tenants" variant="ghost" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
                     <ArrowLeft size={18} /> Back
-                </Link>
+                </Button>
             </div>
 
             <Card>
@@ -97,6 +146,43 @@ export default function GuestCreate() {
                         {errors.aadhar && <p className="mt-1 text-sm text-red-600">{errors.aadhar.message}</p>}
                     </div>
                     <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Select room</label>
+                        <select {...register('roomId', { required: rooms.length > 0 ? 'Select a room' : false })} className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- Select a room --</option>
+                            {rooms.map((room) => (
+                                <option key={room.id} value={room.id}>{room.roomNumber}</option>
+                            ))}
+                        </select>
+                        {errors.roomId && <p className="mt-1 text-sm text-red-600">{errors.roomId.message}</p>}
+                        {selectedPgId && rooms.length === 0 && <p className="mt-2 text-sm text-gray-500">No rooms available for this PG.</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Move-in date</label>
+                        <input type="date" {...register('moveInDate')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Move-out date</label>
+                        <input type="date" {...register('moveOutDate')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Tenant photo</label>
+                        {photoPreview && (
+                            <div className="mb-3 relative inline-block">
+                                <img src={photoPreview.startsWith('data:') ? photoPreview : getAssetUrl(photoPreview)} alt="Tenant" className="w-24 h-24 rounded-lg object-cover border border-gray-200 cursor-pointer" onClick={() => setViewingImage({ src: photoPreview.startsWith('data:') ? photoPreview : getAssetUrl(photoPreview), alt: 'Tenant Photo' })} />
+                            </div>
+                        )}
+                        <input type="file" accept="image/*" {...register('photo')} className="w-full text-gray-700" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">ID proof image</label>
+                        {idProofPreview && (
+                            <div className="mb-3 relative inline-block">
+                                <img src={idProofPreview.startsWith('data:') ? idProofPreview : getAssetUrl(idProofPreview)} alt="ID Proof" className="w-24 h-24 rounded-lg object-cover border border-gray-200 cursor-pointer" onClick={() => setViewingImage({ src: idProofPreview.startsWith('data:') ? idProofPreview : getAssetUrl(idProofPreview), alt: 'ID Proof' })} />
+                            </div>
+                        )}
+                        <input type="file" accept="image/*" {...register('idProof')} className="w-full text-gray-700" />
+                    </div>
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Emergency contact</label>
                         <input {...register('emergency')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
@@ -109,13 +195,26 @@ export default function GuestCreate() {
                         <textarea {...register('address')} rows={3} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                     <div className="md:col-span-2 flex items-center gap-3">
-                        <button type="submit" disabled={saving} className="rounded-2xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50">
+                        <Button type="submit" disabled={saving} variant="primary" className="px-6 py-3">
                             {saving ? 'Saving...' : 'Create tenant'}
-                        </button>
-                        <Link to="/owner/tenants" className="rounded-2xl border border-gray-200 bg-white px-6 py-3 text-gray-700 font-semibold hover:bg-gray-50">Cancel</Link>
+                        </Button>
+                        <Button to="/owner/tenants" variant="secondary" className="px-6 py-3">
+                            Cancel
+                        </Button>
                     </div>
                 </form>
             </Card>
+
+            {viewingImage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="relative bg-white rounded-lg">
+                        <button onClick={() => setViewingImage(null)} className="absolute -top-10 right-0 text-white hover:text-gray-300">
+                            <X size={24} />
+                        </button>
+                        <img src={viewingImage.src} alt={viewingImage.alt} className="max-w-2xl max-h-96 rounded-lg" />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
