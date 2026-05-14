@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux'
 import { NavLink, useLocation } from 'react-router-dom'
-import { X, BarChart3, Users, Home, Settings, DollarSign, Zap } from 'lucide-react'
+import { X, BarChart3, Users, Home, Settings, DollarSign, Zap, MapPin } from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
     const { user } = useSelector((state) => state.auth)
@@ -12,6 +12,14 @@ export default function Sidebar({ open, onClose }) {
         { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
         { icon: Users, label: 'PG Owners', path: '/admin/pg-owners' },
         { icon: Settings, label: 'PGs', path: '/admin/pgs' },
+        {
+            icon: Settings,
+            label: 'Master',
+            children: [
+                { icon: MapPin, label: 'Cities', path: '/admin/cities' },
+                { icon: MapPin, label: 'Areas', path: '/admin/areas' },
+            ],
+        },
         { icon: Users, label: 'Tenants', path: '/owner/tenants' },
         { icon: Settings, label: 'Rooms', path: '/owner/rooms' },
         { icon: DollarSign, label: 'Bills', path: '/owner/bills' },
@@ -67,23 +75,53 @@ export default function Sidebar({ open, onClose }) {
                 </div>
 
                 {/* Menu Items */}
-                <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100vh-140px)]">
+                <nav className="p-4 space-y-3 overflow-y-auto h-[calc(100vh-140px)]">
                     {menu.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition ${location.pathname === item.path
-                                    ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
-                                    : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
-                                } border border-transparent`}
-                            onClick={onClose}
-                        >
-                            {location.pathname === item.path && (
-                                <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
-                            )}
-                            <item.icon size={20} className={`${location.pathname === item.path ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
-                            <span className={`font-semibold ${location.pathname === item.path ? 'text-white' : 'text-slate-100'}`}>{item.label}</span>
-                        </NavLink>
+                        item.children ? (
+                            <div key={item.label}>
+                                <div className="px-4 py-2 text-xs uppercase tracking-wide text-slate-500 font-semibold">
+                                    {item.label}
+                                </div>
+                                <div className="space-y-1">
+                                    {item.children.map((child) => {
+                                        const active = location.pathname === child.path
+                                        return (
+                                            <NavLink
+                                                key={child.path}
+                                                to={child.path}
+                                                className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition ${active
+                                                        ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
+                                                        : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
+                                                    } border border-transparent ml-3`}
+                                                onClick={onClose}
+                                            >
+                                                {active && (
+                                                    <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
+                                                )}
+                                                <child.icon size={18} className={`${active ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
+                                                <span className={`font-semibold ${active ? 'text-white' : 'text-slate-100'}`}>{child.label}</span>
+                                            </NavLink>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition ${location.pathname === item.path
+                                        ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
+                                        : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
+                                    } border border-transparent`}
+                                onClick={onClose}
+                            >
+                                {location.pathname === item.path && (
+                                    <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
+                                )}
+                                <item.icon size={20} className={`${location.pathname === item.path ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
+                                <span className={`font-semibold ${location.pathname === item.path ? 'text-white' : 'text-slate-100'}`}>{item.label}</span>
+                            </NavLink>
+                        )
                     ))}
                 </nav>
 

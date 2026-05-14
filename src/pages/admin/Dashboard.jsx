@@ -94,7 +94,7 @@ export default function Dashboard() {
                         <div key={pg.id} className="flex items-center justify-between rounded-2xl border border-gray-100 p-4 hover:shadow-sm transition">
                             <div>
                                 <p className="font-semibold text-gray-900">{pg.pgName}</p>
-                                <p className="text-sm text-gray-500">{pg.city} • {pg.pgType}</p>
+                                <p className="text-sm text-gray-500">{pg.city?.name || pg.city || 'Unknown city'} • {pg.pgType}</p>
                             </div>
                             <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${pg.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                 {pg.status}

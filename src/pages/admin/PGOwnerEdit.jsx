@@ -106,7 +106,7 @@ export default function PGOwnerEdit() {
                         >
                             {pgs.map((p) => (
                                 <option key={p.id} value={p.id}>
-                                    {p.pgName} — {p.city}
+                                    {p.pgName} — {p.city?.name || p.city || 'N/A'}
                                 </option>
                             ))}
                         </select>

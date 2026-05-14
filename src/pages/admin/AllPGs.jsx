@@ -23,7 +23,10 @@ export default function AllPGs() {
 
     const filtered = useMemo(() => {
         const q = query.toLowerCase()
-        return list.filter((pg) => pg.pgName?.toLowerCase().includes(q) || pg.ownerName?.toLowerCase().includes(q) || pg.city?.toLowerCase().includes(q))
+        return list.filter((pg) => {
+            const cityName = pg.city?.name || pg.city || ''
+            return pg.pgName?.toLowerCase().includes(q) || pg.ownerName?.toLowerCase().includes(q) || cityName.toLowerCase().includes(q)
+        })
     }, [list, query])
 
     const handleDelete = async () => {
@@ -91,7 +94,7 @@ export default function AllPGs() {
                                     <tr key={pg.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-4 font-medium text-gray-900">{pg.pgName}</td>
                                         <td className="px-4 py-4">{pg.ownerName}</td>
-                                        <td className="px-4 py-4">{pg.city}</td>
+                                        <td className="px-4 py-4">{pg.city?.name || pg.city || 'N/A'}</td>
                                         <td className="px-4 py-4">{pg.pgType}</td>
                                         <td className="px-4 py-4">{pg.numberOfRooms}</td>
                                         <td className="px-4 py-4">

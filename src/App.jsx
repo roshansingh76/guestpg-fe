@@ -18,6 +18,10 @@ import PGEdit from './pages/admin/PGEdit'
 import PGOwnerCreate from './pages/admin/PGOwnerCreate'
 import AllPGs from './pages/admin/AllPGs'
 import Reports from './pages/admin/Reports'
+import CityList from './pages/admin/CityList'
+import AreaList from './pages/admin/AreaList'
+import CityEdit from './pages/admin/CityEdit'
+import AreaEdit from './pages/admin/AreaEdit'
 
 // PG Owner Dashboard
 import OwnerDashboard from './pages/owner/Dashboard'
@@ -63,6 +67,12 @@ function App() {
                                         <Route path="pgs/new" element={<PGEdit />} />
                                         <Route path="pgs/:id/edit" element={<PGEdit />} />
                                         <Route path="pgs" element={<AllPGs />} />
+                                        <Route path="cities" element={<CityList />} />
+                                        <Route path="cities/new" element={<CityEdit />} />
+                                        <Route path="cities/:id/edit" element={<CityEdit />} />
+                                        <Route path="areas" element={<AreaList />} />
+                                        <Route path="areas/new" element={<AreaEdit />} />
+                                        <Route path="areas/:id/edit" element={<AreaEdit />} />
                                         <Route path="reports" element={<Reports />} />
                                         <Route path="*" element={<Navigate to="/admin/dashboard" />} />
                                     </Routes>

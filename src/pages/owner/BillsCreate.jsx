@@ -159,7 +159,7 @@ export default function BillsCreate() {
                                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                                 <option value="">-- Select a PG --</option>
                                 {pgs.map((pg) => (
-                                    <option key={pg.id} value={String(pg.id)}>{pg.pgName} — {pg.city}</option>
+                                    <option key={pg.id} value={String(pg.id)}>{pg.pgName} — {pg.city?.name || pg.city || 'N/A'}</option>
                                 ))}
                             </select>
                             {isOwner && <p className="mt-2 text-sm text-gray-500">You can only create bills for your assigned PG.</p>}
