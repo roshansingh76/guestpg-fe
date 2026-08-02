@@ -19,7 +19,7 @@ export default function GuestsList() {
     const [list, setList] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [confirm, setConfirm] = useState({ open: false, id: null, name: '' })
+    const [confirm, setConfirm] = useState({ open: false, id: null, pgId: null, name: '' })
     const [viewingImage, setViewingImage] = useState(null)
 
     useEffect(() => {
@@ -40,18 +40,29 @@ export default function GuestsList() {
     }, [])
 
     useEffect(() => {
-        if (!selectedPgId) {
+        if (selectedPgId) {
+            setLoading(true)
+            localStorage.setItem('selectedPgId', selectedPgId)
+            listGuests(selectedPgId)
+                .then(setList)
+                .catch(() => toast.error('Failed to load tenants'))
+                .finally(() => setLoading(false))
+            return
+        }
+
+        if (pgs.length === 0) {
             setList([])
             setLoading(false)
             return
         }
+
         setLoading(true)
-        localStorage.setItem('selectedPgId', selectedPgId)
-        listGuests(selectedPgId)
-            .then(setList)
+        localStorage.removeItem('selectedPgId')
+        Promise.all(pgs.map((pg) => listGuests(pg.id)))
+            .then((results) => setList(results.flat()))
             .catch(() => toast.error('Failed to load tenants'))
             .finally(() => setLoading(false))
-    }, [selectedPgId])
+    }, [selectedPgId, pgs])
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase()
@@ -60,21 +71,24 @@ export default function GuestsList() {
         )
     }, [list, search])
 
-    const confirmDelete = (guest) => setConfirm({ open: true, id: guest.id, name: guest.name })
+    const confirmDelete = (guest) => setConfirm({ open: true, id: guest.id, pgId: guest.pgId, name: guest.name })
 
     const handleDelete = async () => {
         try {
-            await deleteGuest(selectedPgId, confirm.id)
+            await deleteGuest(confirm.pgId, confirm.id)
             setList((prev) => prev.filter((g) => g.id !== confirm.id))
             toast.success('Tenant deleted')
         } catch {
             toast.error('Failed to delete tenant')
         } finally {
-            setConfirm({ open: false, id: null, name: '' })
+            setConfirm({ open: false, id: null, pgId: null, name: '' })
         }
     }
 
-    const selectedPG = pgs.find((pg) => String(pg.id) === selectedPgId)
+    const pgNameById = useMemo(
+        () => new Map(pgs.map((pg) => [pg.id, pg.pgName])),
+        [pgs]
+    )
 
     return (
         <div className="space-y-6">
@@ -190,7 +204,7 @@ export default function GuestsList() {
                                 )}
                                 {filtered.map((tenant, index) => (
                                     <tr key={tenant.id} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                        <td className="px-6 py-4 font-medium text-gray-900">{selectedPG?.pgName || 'N/A'}</td>
+                                        <td className="px-6 py-4 font-medium text-gray-900">{pgNameById.get(tenant.pgId) || 'N/A'}</td>
                                         <td className="px-6 py-4 font-semibold text-gray-900">{tenant.name}</td>
                                         <td className="px-6 py-4 text-gray-600">{tenant.phone}</td>
                                         <td className="px-6 py-4 text-xs font-mono text-gray-500">{tenant.aadhar || '—'}</td>
@@ -230,7 +244,7 @@ export default function GuestsList() {
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
-                                                    onClick={() => navigate(`/owner/tenants/${tenant.id}/edit`)}
+                                                    onClick={() => navigate(`/owner/tenants/${tenant.id}/edit`, { state: { pgId: tenant.pgId } })}
                                                     className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                                                     title="Edit Tenant"
                                                 >
@@ -258,7 +272,7 @@ export default function GuestsList() {
                 title="Delete tenant?"
                 description={`Remove ${confirm.name}? This cannot be undone.`}
                 confirmText="Delete"
-                onCancel={() => setConfirm({ open: false, id: null, name: '' })}
+                onCancel={() => setConfirm({ open: false, id: null, pgId: null, name: '' })}
                 onConfirm={handleDelete}
             />
 

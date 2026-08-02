@@ -17,7 +17,7 @@ export default function RoomsList() {
     const [list, setList] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [confirm, setConfirm] = useState({ open: false, id: null, label: '' })
+    const [confirm, setConfirm] = useState({ open: false, id: null, pgId: null, label: '' })
 
     useEffect(() => {
         const loadPGs = async () => {
@@ -37,37 +37,51 @@ export default function RoomsList() {
     }, [])
 
     useEffect(() => {
-        if (!selectedPgId) {
+        if (selectedPgId) {
+            setLoading(true)
+            localStorage.setItem('selectedPgId', selectedPgId)
+            listRooms(selectedPgId)
+                .then(setList)
+                .catch(() => toast.error('Failed to load rooms'))
+                .finally(() => setLoading(false))
+            return
+        }
+
+        if (pgs.length === 0) {
             setList([])
             setLoading(false)
             return
         }
+
         setLoading(true)
-        localStorage.setItem('selectedPgId', selectedPgId)
-        listRooms(selectedPgId)
-            .then(setList)
+        localStorage.removeItem('selectedPgId')
+        Promise.all(pgs.map((pg) => listRooms(pg.id)))
+            .then((results) => setList(results.flat()))
             .catch(() => toast.error('Failed to load rooms'))
             .finally(() => setLoading(false))
-    }, [selectedPgId])
+    }, [selectedPgId, pgs])
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase()
-        return list.filter((r) => r.roomNumber?.toLowerCase().includes(q) || r.roomType?.toLowerCase().includes(q))
+        return list.filter((r) => r.roomNumber?.toLowerCase().includes(q))
     }, [list, search])
 
     const handleDelete = async () => {
         try {
-            await deleteRoom(selectedPgId, confirm.id)
+            await deleteRoom(confirm.pgId, confirm.id)
             setList((prev) => prev.filter((r) => r.id !== confirm.id))
             toast.success('Room deleted')
         } catch {
             toast.error('Failed to delete room')
         } finally {
-            setConfirm({ open: false, id: null, label: '' })
+            setConfirm({ open: false, id: null, pgId: null, label: '' })
         }
     }
 
-    const selectedPG = pgs.find((pg) => String(pg.id) === selectedPgId)
+    const pgNameById = useMemo(
+        () => new Map(pgs.map((pg) => [pg.id, pg.pgName])),
+        [pgs]
+    )
 
     return (
         <div className="space-y-6">
@@ -134,14 +148,14 @@ export default function RoomsList() {
                                     </th>
                                     <th className="px-6 py-4 text-left">
                                         <div className="flex items-center gap-2">
-                                            <CheckCircle className="w-4 h-4" />
-                                            Type
+                                            <Fan className="w-4 h-4" />
+                                            AC
                                         </div>
                                     </th>
                                     <th className="px-6 py-4 text-left">
                                         <div className="flex items-center gap-2">
-                                            <Fan className="w-4 h-4" />
-                                            AC
+                                            <CheckCircle className="w-4 h-4" />
+                                            Security/Bed
                                         </div>
                                     </th>
                                     <th className="px-6 py-4 text-left">
@@ -183,15 +197,15 @@ export default function RoomsList() {
                                 )}
                                 {filtered.map((room, index) => (
                                     <tr key={room.id} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                        <td className="px-6 py-4 font-medium text-gray-900">{selectedPG?.pgName || 'N/A'}</td>
+                                        <td className="px-6 py-4 font-medium text-gray-900">{pgNameById.get(room.pgId) || 'N/A'}</td>
                                         <td className="px-6 py-4 font-semibold text-gray-900">{room.roomNumber}</td>
-                                        <td className="px-6 py-4 text-gray-600">{room.roomType}</td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${room.acType === 'AC' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
                                                 <Fan className="w-3 h-3 mr-1" />
                                                 {room.acType}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4 text-gray-600">{room.securityPerBed ? 'Yes' : 'No'}</td>
                                         <td className="px-6 py-4 text-gray-600">{room.totalBeds}</td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${room.availableBeds > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -203,14 +217,14 @@ export default function RoomsList() {
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
-                                                    onClick={() => navigate(`/owner/rooms/${room.id}/edit`)}
+                                                    onClick={() => navigate(`/owner/rooms/${room.id}/edit`, { state: { pgId: room.pgId } })}
                                                     className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                                                     title="Edit Room"
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => setConfirm({ open: true, id: room.id, label: room.roomNumber })}
+                                                    onClick={() => setConfirm({ open: true, id: room.id, pgId: room.pgId, label: room.roomNumber })}
                                                     className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                                                     title="Delete Room"
                                                 >
@@ -231,7 +245,7 @@ export default function RoomsList() {
                 title="Delete room?"
                 description={`Remove room ${confirm.label}? This cannot be undone.`}
                 confirmText="Delete"
-                onCancel={() => setConfirm({ open: false, id: null, label: '' })}
+                onCancel={() => setConfirm({ open: false, id: null, pgId: null, label: '' })}
                 onConfirm={handleDelete}
             />
         </div>

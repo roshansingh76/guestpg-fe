@@ -15,9 +15,10 @@ export default function RoomCreate() {
     const [pgs, setPgs] = useState([])
     const [selectedPgId, setSelectedPgId] = useState(user?.pgId ? String(user.pgId) : '')
     const [saving, setSaving] = useState(false)
-    const { register, handleSubmit, formState: { errors } } = useForm({
-        defaultValues: { roomNumber: '', roomType: '', acType: 'NonAC', totalBeds: 1, availableBeds: 1, pricePerBed: 0 },
+    const { register, handleSubmit, watch, formState: { errors } } = useForm({
+        defaultValues: { roomNumber: '', acType: 'NonAC', totalBeds: 1, availableBeds: 1, pricePerBed: 0, securityPerBed: false },
     })
+    const totalBeds = watch('totalBeds')
 
     useEffect(() => {
         const loadPGs = async () => {
@@ -42,7 +43,13 @@ export default function RoomCreate() {
         }
         setSaving(true)
         try {
-            await createRoom(selectedPgId, { ...values, totalBeds: Number(values.totalBeds), availableBeds: Number(values.availableBeds), pricePerBed: Number(values.pricePerBed) })
+            await createRoom(selectedPgId, {
+                ...values,
+                totalBeds: Number(values.totalBeds),
+                availableBeds: Number(values.availableBeds),
+                pricePerBed: Number(values.pricePerBed),
+                securityPerBed: !!values.securityPerBed,
+            })
             toast.success('Room created')
             navigate('/owner/rooms')
         } catch (err) {
@@ -87,11 +94,6 @@ export default function RoomCreate() {
                         {errors.roomNumber && <p className="mt-1 text-sm text-red-600">{errors.roomNumber.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Room type</label>
-                        <input {...register('roomType', { required: 'Required' })} placeholder="e.g. 4 Sharing" className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        {errors.roomType && <p className="mt-1 text-sm text-red-600">{errors.roomType.message}</p>}
-                    </div>
-                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">AC type</label>
                         <select {...register('acType')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                             <option value="NonAC">Non-AC</option>
@@ -105,13 +107,31 @@ export default function RoomCreate() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available beds</label>
-                        <input type="number" {...register('availableBeds', { required: 'Required', min: 0 })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input
+                            type="number"
+                            {...register('availableBeds', {
+                                required: 'Required',
+                                min: { value: 0, message: 'Cannot be negative' },
+                                validate: (value) => Number(value) <= Number(totalBeds) || 'Cannot exceed total beds',
+                            })}
+                            className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                         {errors.availableBeds && <p className="mt-1 text-sm text-red-600">{errors.availableBeds.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Price per bed (₹)</label>
-                        <input type="number" {...register('pricePerBed', { required: 'Required', min: 0 })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input type="number" {...register('pricePerBed', { required: 'Required', min: { value: 0, message: 'Cannot be negative' } })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         {errors.pricePerBed && <p className="mt-1 text-sm text-red-600">{errors.pricePerBed.message}</p>}
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-3 mt-6 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                {...register('securityPerBed')}
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">Security deposit charged per bed</span>
+                        </label>
                     </div>
                     <div className="md:col-span-2 flex items-center gap-3">
                         <Button type="submit" disabled={saving} variant="primary" className="px-6 py-3">

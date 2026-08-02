@@ -27,6 +27,7 @@ export default function GuestCreate() {
 
     const photoFiles = watch('photo')
     const idProofFiles = watch('idProof')
+    const moveInDate = watch('moveInDate')
 
     useEffect(() => {
         if (photoFiles?.[0]) {
@@ -137,12 +138,12 @@ export default function GuestCreate() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input {...register('phone', { required: 'Required' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input {...register('phone', { required: 'Required', pattern: { value: /^[6-9]\d{9}$/, message: 'Enter a valid 10-digit mobile number' } })} placeholder="9876543210" className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Aadhaar</label>
-                        <input {...register('aadhar', { required: 'Required' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input {...register('aadhar', { required: 'Required', pattern: { value: /^\d{12}$/, message: 'Aadhaar must be exactly 12 digits' } })} placeholder="123412341234" className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         {errors.aadhar && <p className="mt-1 text-sm text-red-600">{errors.aadhar.message}</p>}
                     </div>
                     <div>
@@ -162,7 +163,14 @@ export default function GuestCreate() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Move-out date</label>
-                        <input type="date" {...register('moveOutDate')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input
+                            type="date"
+                            {...register('moveOutDate', {
+                                validate: (value) => !value || !moveInDate || value >= moveInDate || 'Move-out date cannot be before move-in date',
+                            })}
+                            className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        {errors.moveOutDate && <p className="mt-1 text-sm text-red-600">{errors.moveOutDate.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Tenant photo</label>
@@ -188,7 +196,8 @@ export default function GuestCreate() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Emergency phone</label>
-                        <input {...register('emergencyPhone')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input {...register('emergencyPhone', { pattern: { value: /^[6-9]\d{9}$/, message: 'Enter a valid 10-digit mobile number' } })} placeholder="9876543210" className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        {errors.emergencyPhone && <p className="mt-1 text-sm text-red-600">{errors.emergencyPhone.message}</p>}
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>

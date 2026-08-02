@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import SearchableMultiSelect from '../../components/common/SearchableMultiSelect'
 import { ArrowLeft } from 'lucide-react'
 import { getAvailablePGs, getUser, updateUser } from '../../services/userService'
 
@@ -13,9 +14,14 @@ export default function PGOwnerEdit() {
     const [pgs, setPgs] = useState([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
         defaultValues: { pgIds: [] },
     })
+
+    const pgOptions = useMemo(
+        () => pgs.map((p) => ({ value: p.id, label: `${p.pgName} — ${p.city?.name || p.city || 'N/A'}` })),
+        [pgs]
+    )
 
     useEffect(() => {
         Promise.all([getAvailablePGs(), getUser(id)])
@@ -23,7 +29,7 @@ export default function PGOwnerEdit() {
                 setPgs(availablePgs)
                 reset({
                     ...userData,
-                    pgIds: Array.isArray(userData.pgIds) ? userData.pgIds.map(String) : [],
+                    pgIds: Array.isArray(userData.pgIds) ? userData.pgIds.map(Number) : [],
                 })
             })
             .catch(() => toast.error('Failed to load owner'))
@@ -97,19 +103,21 @@ export default function PGOwnerEdit() {
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Assigned PGs</label>
-                        <select
-                            {...register('pgIds', {
-                                validate: (value) => (Array.isArray(value) ? value.length > 0 : !!value) || 'Select at least one PG',
-                            })}
-                            multiple
-                            className="h-40 w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white"
-                        >
-                            {pgs.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.pgName} — {p.city?.name || p.city || 'N/A'}
-                                </option>
-                            ))}
-                        </select>
+                        <Controller
+                            name="pgIds"
+                            control={control}
+                            rules={{ validate: (value) => (Array.isArray(value) && value.length > 0) || 'Select at least one PG' }}
+                            render={({ field }) => (
+                                <SearchableMultiSelect
+                                    options={pgOptions}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="Search PGs by name or city..."
+                                    emptyLabel="No matching PGs"
+                                    error={errors.pgIds}
+                                />
+                            )}
+                        />
                         {errors.pgIds && <p className="mt-1 text-sm text-red-600">{errors.pgIds.message}</p>}
                     </div>
                     <div className="md:col-span-2">

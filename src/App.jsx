@@ -22,6 +22,12 @@ import CityList from './pages/admin/CityList'
 import AreaList from './pages/admin/AreaList'
 import CityEdit from './pages/admin/CityEdit'
 import AreaEdit from './pages/admin/AreaEdit'
+import StaffUsersList from './pages/admin/StaffUsersList'
+import StaffUserEdit from './pages/admin/StaffUserEdit'
+import RolesList from './pages/admin/RolesList'
+import RoleEdit from './pages/admin/RoleEdit'
+import StateList from './pages/admin/StateList'
+import StateEdit from './pages/admin/StateEdit'
 
 // PG Owner Dashboard
 import OwnerDashboard from './pages/owner/Dashboard'
@@ -41,6 +47,10 @@ import BillsList from './pages/owner/BillsList'
 import BillsCreate from './pages/owner/BillsCreate'
 import BillDetails from './pages/owner/BillDetails'
 import OwnerReports from './pages/owner/Reports'
+import OwnerPGsList from './pages/owner/PGsList'
+import OwnerPGView from './pages/owner/PGView'
+import OwnerUsersList from './pages/owner/OwnerUsersList'
+import OwnerUserEdit from './pages/owner/OwnerUserEdit'
 
 function App() {
     return (
@@ -57,7 +67,7 @@ function App() {
                     <Route
                         path="/admin/*"
                         element={
-                            <ProtectedRoute role={['super_admin', 'admin']}>
+                            <ProtectedRoute role={['super_admin', 'staff']}>
                                 <Layout>
                                     <Routes>
                                         <Route path="dashboard" element={<Dashboard />} />
@@ -67,6 +77,9 @@ function App() {
                                         <Route path="pgs/new" element={<PGEdit />} />
                                         <Route path="pgs/:id/edit" element={<PGEdit />} />
                                         <Route path="pgs" element={<AllPGs />} />
+                                        <Route path="states" element={<StateList />} />
+                                        <Route path="states/new" element={<StateEdit />} />
+                                        <Route path="states/:id/edit" element={<StateEdit />} />
                                         <Route path="cities" element={<CityList />} />
                                         <Route path="cities/new" element={<CityEdit />} />
                                         <Route path="cities/:id/edit" element={<CityEdit />} />
@@ -74,6 +87,12 @@ function App() {
                                         <Route path="areas/new" element={<AreaEdit />} />
                                         <Route path="areas/:id/edit" element={<AreaEdit />} />
                                         <Route path="reports" element={<Reports />} />
+                                        <Route path="staff" element={<StaffUsersList />} />
+                                        <Route path="staff/new" element={<StaffUserEdit />} />
+                                        <Route path="staff/:id/edit" element={<StaffUserEdit />} />
+                                        <Route path="roles" element={<RolesList />} />
+                                        <Route path="roles/new" element={<RoleEdit />} />
+                                        <Route path="roles/:id/edit" element={<RoleEdit />} />
                                         <Route path="*" element={<Navigate to="/admin/dashboard" />} />
                                     </Routes>
                                 </Layout>
@@ -108,6 +127,11 @@ function App() {
                                         <Route path="bills/:id" element={<BillDetails />} />
                                         <Route path="expenses" element={<ExpensesList />} />
                                         <Route path="reports" element={<OwnerReports />} />
+                                        <Route path="pgs" element={<OwnerPGsList />} />
+                                        <Route path="pgs/:id" element={<OwnerPGView />} />
+                                        <Route path="users" element={<OwnerUsersList />} />
+                                        <Route path="users/new" element={<OwnerUserEdit />} />
+                                        <Route path="users/:id/edit" element={<OwnerUserEdit />} />
                                         <Route path="*" element={<Navigate to="/owner/dashboard" />} />
                                     </Routes>
                                 </Layout>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -13,8 +13,9 @@ import { getAssetUrl } from '../../services/api'
 export default function GuestEdit() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const user = useSelector((s) => s.auth.user)
-    const pgId = user?.pgId || localStorage.getItem('selectedPgId')
+    const pgId = location.state?.pgId || user?.pgId || localStorage.getItem('selectedPgId')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [pgName, setPgName] = useState('')
@@ -23,12 +24,17 @@ export default function GuestEdit() {
     const [idProofPreview, setIdProofPreview] = useState('')
     const [viewingImage, setViewingImage] = useState(null)
     const { register, handleSubmit, reset, formState: { errors }, watch } = useForm()
+    const moveInDate = watch('moveInDate')
 
     useEffect(() => {
         if (!pgId) return
         getGuest(pgId, id)
             .then((data) => {
-                reset(data)
+                reset({
+                    ...data,
+                    moveInDate: data.moveInDate ? data.moveInDate.slice(0, 10) : '',
+                    moveOutDate: data.moveOutDate ? data.moveOutDate.slice(0, 10) : '',
+                })
                 setPhotoPreview(data.photoUrl || '')
                 setIdProofPreview(data.idProofUrl || '')
             })
@@ -125,12 +131,12 @@ export default function GuestEdit() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input {...register('phone', { required: 'Required' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input {...register('phone', { required: 'Required', pattern: { value: /^[6-9]\d{9}$/, message: 'Enter a valid 10-digit mobile number' } })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Aadhaar</label>
-                        <input {...register('aadhar', { required: 'Required' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input {...register('aadhar', { required: 'Required', pattern: { value: /^\d{12}$/, message: 'Aadhaar must be exactly 12 digits' } })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         {errors.aadhar && <p className="mt-1 text-sm text-red-600">{errors.aadhar.message}</p>}
                     </div>
                     <div>
@@ -148,7 +154,14 @@ export default function GuestEdit() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Move-out date</label>
-                        <input type="date" {...register('moveOutDate')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input
+                            type="date"
+                            {...register('moveOutDate', {
+                                validate: (value) => !value || !moveInDate || value >= moveInDate || 'Move-out date cannot be before move-in date',
+                            })}
+                            className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        {errors.moveOutDate && <p className="mt-1 text-sm text-red-600">{errors.moveOutDate.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Tenant photo</label>
@@ -174,7 +187,8 @@ export default function GuestEdit() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Emergency phone</label>
-                        <input {...register('emergencyPhone')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input {...register('emergencyPhone', { pattern: { value: /^[6-9]\d{9}$/, message: 'Enter a valid 10-digit mobile number' } })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        {errors.emergencyPhone && <p className="mt-1 text-sm text-red-600">{errors.emergencyPhone.message}</p>}
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>

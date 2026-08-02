@@ -1,45 +1,121 @@
+import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { NavLink, useLocation } from 'react-router-dom'
-import { X, BarChart3, Users, Home, Settings, DollarSign, Zap, MapPin } from 'lucide-react'
+import {
+    X,
+    ChevronDown,
+    BarChart3,
+    Users,
+    Home,
+    Settings,
+    DollarSign,
+    Zap,
+    MapPin,
+    Building2,
+    UserCog,
+    BedDouble,
+    ClipboardList,
+    Wallet,
+    Receipt,
+    ShieldCheck,
+} from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
     const { user } = useSelector((state) => state.auth)
     const location = useLocation()
 
-    const isSuperAdmin = user?.role === 'super_admin' || user?.role === 'admin'
+    const isSuperAdmin = user?.role === 'super_admin' || user?.role === 'staff'
 
     const adminMenu = [
         { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-        { icon: Users, label: 'PG Owners', path: '/admin/pg-owners' },
-        { icon: Settings, label: 'PGs', path: '/admin/pgs' },
+        {
+            icon: UserCog,
+            label: 'Users & Roles',
+            children: [
+                { icon: Users, label: 'PG Owners', path: '/admin/pg-owners' },
+                { icon: UserCog, label: 'Staff / Sub Admins', path: '/admin/staff' },
+                ...(user?.role === 'super_admin'
+                    ? [{ icon: ShieldCheck, label: 'Roles', path: '/admin/roles' }]
+                    : []),
+            ],
+        },
+        {
+            icon: Building2,
+            label: 'PG Management',
+            children: [
+                { icon: Building2, label: 'All PGs', path: '/admin/pgs' },
+                { icon: Users, label: 'Tenants', path: '/owner/tenants' },
+                { icon: BedDouble, label: 'Rooms', path: '/owner/rooms' },
+                { icon: Receipt, label: 'Bills', path: '/owner/bills' },
+                { icon: Zap, label: 'Expenses', path: '/owner/expenses' },
+            ],
+        },
         {
             icon: Settings,
-            label: 'Master',
+            label: 'Masters',
             children: [
+                { icon: MapPin, label: 'States', path: '/admin/states' },
                 { icon: MapPin, label: 'Cities', path: '/admin/cities' },
                 { icon: MapPin, label: 'Areas', path: '/admin/areas' },
             ],
         },
-        { icon: Users, label: 'Tenants', path: '/owner/tenants' },
-        { icon: Settings, label: 'Rooms', path: '/owner/rooms' },
-        { icon: DollarSign, label: 'Bills', path: '/owner/bills' },
-        { icon: Zap, label: 'Expenses', path: '/owner/expenses' },
-        { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
+        {
+            icon: BarChart3,
+            label: 'Reports',
+            children: [
+                { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
+            ],
+        },
     ]
 
     const ownerMenu = [
         { icon: Home, label: 'Dashboard', path: '/owner/dashboard' },
-        { icon: Users, label: 'Tenants', path: '/owner/tenants' },
-        { icon: Settings, label: 'Rooms', path: '/owner/rooms' },
-        { icon: Settings, label: 'Beds', path: '/owner/beds' },
-        { icon: Settings, label: 'Allocations', path: '/owner/allocations' },
-        { icon: DollarSign, label: 'Payments', path: '/owner/payments' },
-        { icon: DollarSign, label: 'Bills', path: '/owner/bills' },
-        { icon: Zap, label: 'Expenses', path: '/owner/expenses' },
-        { icon: BarChart3, label: 'Reports', path: '/owner/reports' },
+        {
+            icon: UserCog,
+            label: 'Users',
+            children: [
+                { icon: Users, label: 'Users', path: '/owner/users' },
+            ],
+        },
+        {
+            icon: Building2,
+            label: 'PG Management',
+            children: [
+                { icon: Building2, label: 'My PGs', path: '/owner/pgs' },
+                { icon: Users, label: 'Tenants', path: '/owner/tenants' },
+                { icon: BedDouble, label: 'Rooms', path: '/owner/rooms' },
+                { icon: BedDouble, label: 'Beds', path: '/owner/beds' },
+                { icon: ClipboardList, label: 'Allocations', path: '/owner/allocations' },
+                { icon: Wallet, label: 'Payments', path: '/owner/payments' },
+                { icon: Receipt, label: 'Bills', path: '/owner/bills' },
+                { icon: Zap, label: 'Expenses', path: '/owner/expenses' },
+            ],
+        },
+        {
+            icon: BarChart3,
+            label: 'Reports',
+            children: [
+                { icon: BarChart3, label: 'Reports', path: '/owner/reports' },
+            ],
+        },
     ]
 
     const menu = isSuperAdmin ? adminMenu : ownerMenu
+
+    const findActiveGroup = () =>
+        menu.find((item) => item.children?.some((child) => child.path === location.pathname))?.label ?? null
+
+    const [openMenu, setOpenMenu] = useState(findActiveGroup)
+
+    // Keep the group containing the active route open, and every other group collapsed.
+    useEffect(() => {
+        const activeGroup = findActiveGroup()
+        if (activeGroup) setOpenMenu(activeGroup)
+    }, [location.pathname])
+
+    const toggleGroup = (label) => {
+        setOpenMenu((prev) => (prev === label ? null : label))
+    }
 
     return (
         <>
@@ -75,54 +151,82 @@ export default function Sidebar({ open, onClose }) {
                 </div>
 
                 {/* Menu Items */}
-                <nav className="p-4 space-y-3 overflow-y-auto h-[calc(100vh-140px)]">
-                    {menu.map((item) => (
-                        item.children ? (
+                <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-140px)]">
+                    {menu.map((item) => {
+                        if (!item.children) {
+                            const active = location.pathname === item.path
+                            return (
+                                <NavLink
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition ${active
+                                            ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
+                                            : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
+                                        } border border-transparent`}
+                                    onClick={onClose}
+                                >
+                                    {active && (
+                                        <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
+                                    )}
+                                    <item.icon size={20} className={`${active ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
+                                    <span className={`font-semibold ${active ? 'text-white' : 'text-slate-100'}`}>{item.label}</span>
+                                </NavLink>
+                            )
+                        }
+
+                        const isOpen = openMenu === item.label
+                        const groupHasActiveChild = item.children.some((child) => child.path === location.pathname)
+
+                        return (
                             <div key={item.label}>
-                                <div className="px-4 py-2 text-xs uppercase tracking-wide text-slate-500 font-semibold">
-                                    {item.label}
-                                </div>
-                                <div className="space-y-1">
-                                    {item.children.map((child) => {
-                                        const active = location.pathname === child.path
-                                        return (
-                                            <NavLink
-                                                key={child.path}
-                                                to={child.path}
-                                                className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition ${active
-                                                        ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
-                                                        : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
-                                                    } border border-transparent ml-3`}
-                                                onClick={onClose}
-                                            >
-                                                {active && (
-                                                    <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
-                                                )}
-                                                <child.icon size={18} className={`${active ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
-                                                <span className={`font-semibold ${active ? 'text-white' : 'text-slate-100'}`}>{child.label}</span>
-                                            </NavLink>
-                                        )
-                                    })}
+                                <button
+                                    type="button"
+                                    onClick={() => toggleGroup(item.label)}
+                                    className={`w-full group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition border border-transparent ${groupHasActiveChild
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
+                                        }`}
+                                >
+                                    <item.icon size={20} className={`${groupHasActiveChild ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
+                                    <span className={`font-semibold flex-1 text-left ${groupHasActiveChild ? 'text-white' : 'text-slate-100'}`}>{item.label}</span>
+                                    <ChevronDown
+                                        size={16}
+                                        className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                    />
+                                </button>
+
+                                <div
+                                    className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}
+                                >
+                                    <div className="space-y-1 pb-1">
+                                        {item.children.map((child) => {
+                                            const active = location.pathname === child.path
+                                            return (
+                                                <NavLink
+                                                    key={child.path}
+                                                    to={child.path}
+                                                    className={`group relative flex items-center gap-3 px-4 py-2.5 rounded-2xl transition ${active
+                                                            ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
+                                                            : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
+                                                        } border border-transparent ml-3`}
+                                                    onClick={() => {
+                                                        setOpenMenu(item.label)
+                                                        onClose()
+                                                    }}
+                                                >
+                                                    {active && (
+                                                        <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
+                                                    )}
+                                                    <child.icon size={18} className={`${active ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
+                                                    <span className={`font-semibold ${active ? 'text-white' : 'text-slate-100'}`}>{child.label}</span>
+                                                </NavLink>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
                             </div>
-                        ) : (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl transition ${location.pathname === item.path
-                                        ? 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white shadow-[0_10px_24px_rgba(59,130,246,0.25)]'
-                                        : 'text-slate-200/90 hover:bg-white/5 hover:border-white/10'
-                                    } border border-transparent`}
-                                onClick={onClose}
-                            >
-                                {location.pathname === item.path && (
-                                    <span className="absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
-                                )}
-                                <item.icon size={20} className={`${location.pathname === item.path ? 'text-white' : 'text-slate-300/80 group-hover:text-white'}`} />
-                                <span className={`font-semibold ${location.pathname === item.path ? 'text-white' : 'text-slate-100'}`}>{item.label}</span>
-                            </NavLink>
                         )
-                    ))}
+                    })}
                 </nav>
 
                 {/* Footer */}

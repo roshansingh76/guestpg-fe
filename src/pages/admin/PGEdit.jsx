@@ -16,13 +16,20 @@ export default function PGEdit() {
     const [cities, setCities] = useState([])
     const [areas, setAreas] = useState([])
     const [loadingCities, setLoadingCities] = useState(true)
-    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
         defaultValues: {
             isFoodAvailable: false,
         },
     })
 
     const selectedCityId = watch('cityId')
+
+    // State is derived from the selected city's linked state, not typed manually
+    useEffect(() => {
+        if (!selectedCityId) return
+        const city = cities.find((c) => String(c.id) === String(selectedCityId))
+        setValue('state', city?.state?.name || '', { shouldValidate: true })
+    }, [selectedCityId, cities, setValue])
 
     const formatPGForForm = (pg) => ({
         pgName: pg.pgName || '',
@@ -31,7 +38,6 @@ export default function PGEdit() {
         ownerEmail: pg.ownerEmail || '',
         addressLine1: pg.addressLine1 || '',
         addressLine2: pg.addressLine2 || '',
-        nearbyMark: pg.nearbyMark || '',
         areaId: pg.area?.id || pg.areaId || '',
         cityId: pg.city?.id || pg.cityId || '',
         state: pg.state || '',
@@ -103,7 +109,6 @@ export default function PGEdit() {
                 ownerEmail: values.ownerEmail,
                 addressLine1: values.addressLine1,
                 addressLine2: values.addressLine2,
-                nearbyMark: values.nearbyMark,
                 areaId: Number(values.areaId),
                 cityId: Number(values.cityId),
                 state: values.state,
@@ -185,12 +190,12 @@ export default function PGEdit() {
                                     Owner Phone <span className="text-red-600">*</span>
                                 </label>
                                 <input
-                                    {...register('ownerPhone', { required: 'Owner phone is required' })}
+                                    {...register('ownerPhone', { required: 'Owner phone is required', pattern: { value: /^[6-9]\d{9}$/, message: 'Enter a valid 10-digit mobile number' } })}
                                     className={`w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 transition ${errors.ownerPhone
                                         ? 'border-red-300 focus:ring-red-500 focus:border-red-300'
                                         : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
                                         }`}
-                                    placeholder="+91 XXXXX XXXXX"
+                                    placeholder="9876543210"
                                 />
                                 {errors.ownerPhone && <p className="mt-1 text-sm text-red-600">{errors.ownerPhone.message}</p>}
                             </div>
@@ -316,25 +321,12 @@ export default function PGEdit() {
                                     State <span className="text-red-600">*</span>
                                 </label>
                                 <input
-                                    {...register('state', { required: 'State is required' })}
-                                    className={`w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 transition ${errors.state
-                                        ? 'border-red-300 focus:ring-red-500 focus:border-red-300'
-                                        : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
-                                        }`}
-                                    placeholder="e.g., Haryana, Delhi"
+                                    {...register('state', { required: 'Select a city that has a state mapped to it' })}
+                                    readOnly
+                                    className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-700 focus:outline-none cursor-not-allowed"
+                                    placeholder="Auto-filled from selected city"
                                 />
                                 {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nearby Landmark
-                                </label>
-                                <input
-                                    {...register('nearbyMark')}
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                    placeholder="e.g., Near Metro Station"
-                                />
                             </div>
                         </div>
                     </div>

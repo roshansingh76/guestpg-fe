@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -11,12 +11,14 @@ import { getRoom, listPGs, updateRoom } from '../../services/pgService'
 export default function RoomEdit() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const user = useSelector((s) => s.auth.user)
-    const pgId = user?.pgId || localStorage.getItem('selectedPgId')
+    const pgId = location.state?.pgId || user?.pgId || localStorage.getItem('selectedPgId')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [pgName, setPgName] = useState('')
-    const { register, handleSubmit, reset, formState: { errors } } = useForm()
+    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
+    const totalBeds = watch('totalBeds')
 
     useEffect(() => {
         if (!pgId) return
@@ -39,7 +41,14 @@ export default function RoomEdit() {
     const onSubmit = async (values) => {
         setSaving(true)
         try {
-            await updateRoom(pgId, id, { ...values, totalBeds: Number(values.totalBeds), availableBeds: Number(values.availableBeds), pricePerBed: Number(values.pricePerBed) })
+            await updateRoom(pgId, id, {
+                roomNumber: values.roomNumber,
+                acType: values.acType,
+                totalBeds: Number(values.totalBeds),
+                availableBeds: Number(values.availableBeds),
+                pricePerBed: Number(values.pricePerBed),
+                securityPerBed: !!values.securityPerBed,
+            })
             toast.success('Room updated')
             navigate('/owner/rooms')
         } catch (err) {
@@ -73,11 +82,6 @@ export default function RoomEdit() {
                         {errors.roomNumber && <p className="mt-1 text-sm text-red-600">{errors.roomNumber.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Room type</label>
-                        <input {...register('roomType', { required: 'Required' })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        {errors.roomType && <p className="mt-1 text-sm text-red-600">{errors.roomType.message}</p>}
-                    </div>
-                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">AC type</label>
                         <select {...register('acType')} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                             <option value="NonAC">Non-AC</option>
@@ -91,13 +95,31 @@ export default function RoomEdit() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available beds</label>
-                        <input type="number" {...register('availableBeds', { required: 'Required', min: 0 })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input
+                            type="number"
+                            {...register('availableBeds', {
+                                required: 'Required',
+                                min: { value: 0, message: 'Cannot be negative' },
+                                validate: (value) => Number(value) <= Number(totalBeds) || 'Cannot exceed total beds',
+                            })}
+                            className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                         {errors.availableBeds && <p className="mt-1 text-sm text-red-600">{errors.availableBeds.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Price per bed (₹)</label>
-                        <input type="number" {...register('pricePerBed', { required: 'Required', min: 0 })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input type="number" {...register('pricePerBed', { required: 'Required', min: { value: 0, message: 'Cannot be negative' } })} className="w-full rounded-2xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         {errors.pricePerBed && <p className="mt-1 text-sm text-red-600">{errors.pricePerBed.message}</p>}
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-3 mt-6 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                {...register('securityPerBed')}
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">Security deposit charged per bed</span>
+                        </label>
                     </div>
                     <div className="md:col-span-2">
                         <button type="submit" disabled={saving} className="rounded-2xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50">

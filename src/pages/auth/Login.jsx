@@ -15,9 +15,9 @@ export default function Login() {
     // Redirect already-logged-in users away from login page
     useEffect(() => {
         if (!isAuthenticated) return
-        if (user?.role === 'super_admin') {
+        if (user?.role === 'super_admin' || user?.role === 'staff') {
             navigate('/admin/dashboard', { replace: true })
-        } else if (user?.role === 'pg_owner') {
+        } else {
             navigate('/owner/dashboard', { replace: true })
         }
     }, [isAuthenticated, navigate, user])
@@ -27,7 +27,7 @@ export default function Login() {
         if (loginUser.fulfilled.match(result)) {
             toast.success('Login successful!')
             const role = result.payload.user?.role
-            if (role === 'super_admin') {
+            if (role === 'super_admin' || role === 'staff') {
                 navigate('/admin/dashboard', { replace: true })
             } else {
                 navigate('/owner/dashboard', { replace: true })
@@ -59,7 +59,7 @@ export default function Login() {
                                     type="email"
                                     {...register('email', { required: 'Email is required' })}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
-                                    placeholder="admin@gmail.com"
+                                    placeholder="admin@flexiroomz.com"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -104,8 +104,8 @@ export default function Login() {
                     <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                         <p className="text-xs font-semibold text-blue-900 mb-2">Demo Credentials</p>
                         <div className="text-xs text-blue-800 space-y-1">
-                            <p><span className="font-medium">Super Admin:</span> admin@gmail.com / 123456</p>
-                            <p><span className="font-medium">PG Owner:</span> owner@pgsystem.com / password</p>
+                            <p><span className="font-medium">Super Admin:</span> admin@flexiroomz.com / Admin@123</p>
+                            <p><span className="font-medium">PG Owner:</span> pgowner1@flexiroomz.com / Owner@123</p>
                         </div>
                     </div>
 

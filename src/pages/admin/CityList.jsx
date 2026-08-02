@@ -7,6 +7,7 @@ import Button from '../../components/common/Button'
 import { getAllCities } from '../../services/cityService'
 
 export default function CityList() {
+    const navigate = useNavigate()
     const [cities, setCities] = useState([])
     const [loading, setLoading] = useState(true)
 
@@ -51,8 +52,12 @@ export default function CityList() {
                                 {cities.map((city) => (
                                     <tr key={city.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-4 font-medium text-gray-900">{city.name}</td>
-                                        <td className="px-4 py-4">{city.state || '—'}</td>
-                                        <td className="px-4 py-4">{city.status}</td>
+                                        <td className="px-4 py-4">{city.state?.name || '—'}</td>
+                                        <td className="px-4 py-4">
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${city.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                {city.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-4">{city.areas?.length ?? 0}</td>
                                         <td className="px-4 py-4">
                                             <Button onClick={() => navigate(`/admin/cities/${city.id}/edit`)} icon={Pencil} variant="outline" size="sm">

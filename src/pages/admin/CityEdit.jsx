@@ -6,41 +6,47 @@ import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { ArrowLeft } from 'lucide-react'
 import { createCity, getCityById, updateCity } from '../../services/cityService'
+import { getAllStates } from '../../services/stateService'
 
 export default function CityEdit() {
     const { id } = useParams()
     const navigate = useNavigate()
-    const [loading, setLoading] = useState(Boolean(id))
+    const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [states, setStates] = useState([])
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         defaultValues: {
             name: '',
-            state: '',
+            stateId: '',
         },
     })
 
     useEffect(() => {
-        if (!id) return setLoading(false)
-        getCityById(id)
-            .then((data) => {
-                const city = data.data || data
-                reset({
-                    name: city.name || '',
-                    state: city.state || '',
-                })
+        Promise.all([getAllStates(), id ? getCityById(id) : Promise.resolve(null)])
+            .then(([statesResponse, cityResponse]) => {
+                setStates(Array.isArray(statesResponse) ? statesResponse : [])
+
+                if (cityResponse) {
+                    const city = cityResponse.data || cityResponse
+                    reset({
+                        name: city.name || '',
+                        stateId: city.state?.id || city.stateId || '',
+                    })
+                }
             })
-            .catch(() => toast.error('Failed to load city'))
+            .catch(() => toast.error('Failed to load data'))
             .finally(() => setLoading(false))
     }, [id, reset])
 
     const onSubmit = async (values) => {
         setSaving(true)
         try {
+            const payload = { name: values.name, stateId: values.stateId ? Number(values.stateId) : null }
             if (id) {
-                await updateCity(id, values)
+                await updateCity(id, payload)
                 toast.success('City updated successfully')
             } else {
-                await createCity(values)
+                await createCity(payload)
                 toast.success('City created successfully')
             }
             navigate('/admin/cities')
@@ -82,15 +88,21 @@ export default function CityEdit() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                        <input
-                            {...register('state', { required: 'State is required' })}
-                            className={`w-full rounded-2xl border px-4 py-3 focus:outline-none focus:ring-2 transition ${errors.state
+                        <select
+                            {...register('stateId', { required: 'State is required' })}
+                            className={`w-full rounded-2xl border px-4 py-3 bg-white focus:outline-none focus:ring-2 transition ${errors.stateId
                                 ? 'border-red-300 focus:ring-red-500 focus:border-red-300'
                                 : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
                                 }`}
-                            placeholder="Enter state"
-                        />
-                        {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>}
+                        >
+                            <option value="">Select State</option>
+                            {states.map((state) => (
+                                <option key={state.id} value={state.id}>
+                                    {state.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.stateId && <p className="mt-1 text-sm text-red-600">{errors.stateId.message}</p>}
                     </div>
 
                     <div className="md:col-span-2 flex gap-4">
